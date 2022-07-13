@@ -49,7 +49,7 @@ sudo systemctl status ssh
 
 - view the ssh server's fingerprint:  
 ```
-cd /etc/ssh/sshd_config
+cat /etc/ssh/sshd_config
 ssh-keygen -l -f <HostKeyFileName>
 ```
 
@@ -83,5 +83,96 @@ as desribed in `setup ssh client`.
 
 ## ssh client's public key store on server??
 
-# 2. ssl ??
+
+# 2. ssl
+
+## overview
+SSL (deprecated) is an old version of TLS.  
+HTTPS uses TLS to secure the connection between client and server.  
+TLS is based on SSH/Public Key Crypto. (as described above)  
+- in handshake phase, the client requests certificate from server and agree on the symmatric key.
+- once the handshake is successful, later messages are encrypted.
+- the message sent to server can only decrypted by server.
+- message sent to client can only decrypted by client.
+
+A server can create self-signed certificate. client and server can use that certificate to secure connection and messages.   
+but client has no way to guarantee that the certificate is from the right server or from the man-in-middle.  
+
+CA (Certificate Authorities) presents to solve the problem of man-in-middle attack.  
+CA issues a certificate (which includes a public key and private key) for a domain.  
+Whenever the client want to ensure that the public key is from the right domain, they get the public key from server and check it with the CA.  
+if CA validates that domain matches public key, the certificate (public key) is safe and client are communicating to the right server.  
+if CA rejects, the certificate (public key) are not safe and client might be communicating to tampered server.  
+
+Usually, only the server need to be authenticated by CA.  
+most of the time, client are not required by server to have authenticated SSL cert.  
+
+(
+https://en.wikipedia.org/wiki/Transport_Layer_Security    
+https://en.wikipedia.org/wiki/Public_key_certificate
+)
+
+
+## types of certificates
+DV, OV, EV  
+-> DV is enough for small business
+
+(Validation levels in: https://en.wikipedia.org/wiki/Public_key_certificate)
+
+
+## common CA, ssl providers
+### free certificate (recommended)
+let's encrypt:  
+(https://letsencrypt.org/getting-started/#without-shell-access)
+
+### cheap certificate (recommended)
+ssls: (cheap + 30day trial)  
+(hhttps://www.ssls.com/)
+
+namecheap:  
+(https://www.namecheap.com/security/ssl-certificates/)
+
+### expensive certificate
+digicert  
+(https://www.digicert.com/tls-ssl/basic-tls-ssl-certificates)
+
+
+## set up SSL
+### manually on a computer
+
+this demonstrates setup steps for virtual machines such as Google Compute Engine.  
+1. first, get the cert.
+(for demo, you should use the free DV certficate from Let's Encrypt:  
+- install Let's Encrypt on local machine (eg: Windows)
+follow to step 3 at below link:  
+https://certbot.eff.org/instructions?ws=other&os=windows
+
+- generate ssl cert:  
+certbot certonly --manual --preferred-challenges http
+
+it will prompt to ask you for some info such email, domain.  
+Then you have to set up the file to your server (if you use --preferred-challenges http).  
+or set up a DNS record (if you use --preferred-challenges dns).  
+the purpose is to prove your control over the domain.  
+  
+once done, the cert will be generated at the directory shown in the command prompt.  
+Now you can upload this cert to virtual machine and use it to set up HTTPS.  
+
+https://eff-certbot.readthedocs.io/en/stable/using.html#manual
+)
+
+2. for nodejs express server:
+https://stackoverflow.com/a/70443344/16550663
+
+
+### on Google Cloud Run
+ssl for cloud run:   
+- add custom domain in cloud run panel (must have a domain first)
+- add CNAME record in owned domain panel.
+- wait about 15mins to 1hour for google to provide free ssl cert for new custom domain.
+
+https://cloud.google.com/run/docs/mapping-custom-domains#run
+
+### on Firebase Hosting
+?
 
